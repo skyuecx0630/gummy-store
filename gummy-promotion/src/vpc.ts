@@ -1,4 +1,10 @@
-import { Vpc, SecurityGroup, Port, SubnetType } from "aws-cdk-lib/aws-ec2";
+import {
+  Vpc,
+  SecurityGroup,
+  Port,
+  SubnetType,
+  Peer,
+} from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 
 export class VPCResource extends Construct {
@@ -42,6 +48,8 @@ export class VPCResource extends Construct {
       description: "Security group for NLB",
       allowAllOutbound: false,
     });
+
+    this.nlbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80));
 
     this.nlbSecurityGroup.addEgressRule(
       this.applicationSecurityGroup,
