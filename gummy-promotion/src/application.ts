@@ -72,6 +72,7 @@ export class ApplicationResource extends Construct {
       securityGroup: props.applicationSecurityGroup,
       role: role,
       userData: userData,
+      userDataCausesReplacement: true,
     });
   }
 }
