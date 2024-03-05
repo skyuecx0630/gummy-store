@@ -58,7 +58,7 @@ export class ApplicationResource extends Construct {
         "/ /home/ec2-user/app/ --recursive",
       "python3 -m ensurepip",
       "python3 -m pip install -r /home/ec2-user/app/requirements.txt",
-      "nohup python3 /home/ec2-user/app/requirements.txt > /var/log/app.log 2>&1 < /dev/null &"
+      "nohup python3 /home/ec2-user/app/app.py > /var/log/app.log 2>&1 < /dev/null &"
     );
 
     this.instance = new Instance(this, "gummy-promotion-application", {
