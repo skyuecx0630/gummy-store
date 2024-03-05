@@ -14,22 +14,23 @@ export class GummyPromotionStack extends cdk.Stack {
     // The code that defines your stack goes here
     const vpcResource = new VPCResource(this, "VPC");
 
-    const application = new ApplicationResource(this, "Application", {
+    const applicationResource = new ApplicationResource(this, "Application", {
       vpc: vpcResource.vpc,
       applicationSecurityGroup: vpcResource.applicationSecurityGroup,
     });
 
-    const nlb = new NLBResource(this, "NLB", {
+    const nlbResource = new NLBResource(this, "NLB", {
       vpc: vpcResource.vpc,
       nlbSecurityGroup: vpcResource.nlbSecurityGroup,
+      applicationInstances: [applicationResource.instance],
     });
 
     new cdk.CfnOutput(this, "ApplicationInstanceId", {
-      value: application.instance.instanceId,
+      value: applicationResource.instance.instanceId,
     });
 
     new cdk.CfnOutput(this, "NLBEndpoint", {
-      value: nlb.nlb.loadBalancerDnsName,
+      value: nlbResource.nlb.loadBalancerDnsName,
     });
   }
 }
