@@ -1,6 +1,8 @@
 import { Duration } from "aws-cdk-lib";
 import { Instance, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
 import {
+  NetworkListener,
+  NetworkListenerAction,
   NetworkLoadBalancer,
   NetworkTargetGroup,
   Protocol,
@@ -31,18 +33,28 @@ export class NLBResource extends Construct {
       return new InstanceTarget(instance, 8080);
     });
 
-    new NetworkTargetGroup(this, "gummy-promotion-target-group", {
-      vpc: props.vpc,
-      port: 8080,
-      targetGroupName: "gummy-promotion-nlb-tg",
-      healthCheck: {
-        protocol: Protocol.HTTP,
-        interval: Duration.seconds(5),
-        timeout: Duration.seconds(3),
-        path: "/health",
-      },
-      targets: targets,
-      deregistrationDelay: Duration.seconds(30),
+    const targetGroup = new NetworkTargetGroup(
+      this,
+      "gummy-promotion-target-group",
+      {
+        vpc: props.vpc,
+        port: 8080,
+        targetGroupName: "gummy-promotion-nlb-tg",
+        healthCheck: {
+          protocol: Protocol.HTTP,
+          interval: Duration.seconds(5),
+          timeout: Duration.seconds(3),
+          path: "/health",
+        },
+        targets: targets,
+        deregistrationDelay: Duration.seconds(30),
+      }
+    );
+
+    const listener = new NetworkListener(this, "gummy-promotion-nlb-listener", {
+      loadBalancer: this.nlb,
+      port: 80,
+      defaultAction: NetworkListenerAction.forward([targetGroup]),
     });
   }
 }
