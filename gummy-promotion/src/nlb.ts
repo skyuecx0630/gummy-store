@@ -32,6 +32,7 @@ export class NLBResource extends Construct {
     });
 
     new NetworkTargetGroup(this, "gummy-promotion-target-group", {
+      vpc: props.vpc,
       port: 8080,
       targetGroupName: "gummy-promotion-nlb-tg",
       healthCheck: {
@@ -41,6 +42,7 @@ export class NLBResource extends Construct {
         path: "/health",
       },
       targets: targets,
+      deregistrationDelay: Duration.seconds(30),
     });
   }
 }
