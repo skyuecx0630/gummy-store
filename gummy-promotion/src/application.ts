@@ -73,8 +73,6 @@ export class ApplicationResource extends Construct {
         },
       ],
     });
-    const cfnIns = this.instance.node.defaultChild as CfnInstance;
-    cfnIns.addPropertyOverride("DisableApiTermination", true);
 
     NagSuppressions.addResourceSuppressions(
       this.instance,
@@ -89,7 +87,7 @@ export class ApplicationResource extends Construct {
         },
         {
           id: "AwsSolutions-EC29",
-          reason: "Remediated through property override",
+          reason: "Ignore termination protection",
         },
       ],
       true
