@@ -3,6 +3,7 @@ import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import { AwsSolutionsChecks, NagSuppressions } from "cdk-nag";
 import { GummyPromotionStack } from "../lib/gummy-promotion-stack";
+import { GummyPromotionPipelineStack } from "../lib/gummy-promotion-pipeline-stack";
 
 const devEnv = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -10,9 +11,17 @@ const devEnv = {
 };
 
 const app = new cdk.App();
-const stack = new GummyPromotionStack(app, "GummyPromotionStack", {
-  env: devEnv,
-});
+// const stack = new GummyPromotionStack(app, "GummyPromotionStack", {
+//   env: devEnv,
+// });
+
+const stack = new GummyPromotionPipelineStack(
+  app,
+  "GummyPromotionPipelineStack",
+  {
+    env: devEnv,
+  }
+);
 
 cdk.Aspects.of(app).add(new AwsSolutionsChecks());
 NagSuppressions.addStackSuppressions(stack, [
