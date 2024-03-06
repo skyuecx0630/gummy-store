@@ -1,6 +1,12 @@
-import { RemovalPolicy } from "aws-cdk-lib";
 import {
   AmazonLinuxCpuType,
+  BlockDeviceVolume,
+  CfnInstance,
+  CloudFormationInit,
+  InitCommand,
+  InitConfig,
+  InitFile,
+  InitSource,
   Instance,
   InstanceClass,
   InstanceSize,
@@ -11,9 +17,7 @@ import {
   UserData,
   Vpc,
 } from "aws-cdk-lib/aws-ec2";
-import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { Bucket } from "aws-cdk-lib/aws-s3";
-import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 
 interface ApplicationProps {
@@ -27,38 +31,11 @@ export class ApplicationResource extends Construct {
   constructor(scope: Construct, id: string, props: ApplicationProps) {
     super(scope, id);
 
-    const assetBucket = new Bucket(this, "gummy-promotion-asset-bucket", {
-      removalPolicy: RemovalPolicy.DESTROY,
-      publicReadAccess: false,
-      autoDeleteObjects: true,
-    });
-
-    new BucketDeployment(this, "gummy-promotion-asset-deployment", {
-      sources: [Source.asset("src/app")],
-      destinationBucket: assetBucket,
-      retainOnDelete: false,
-    });
-
-    const role = new Role(this, "gummy-promotion-application-role", {
-      assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"),
-      ],
-    });
-
-    assetBucket.grantRead(role);
-
     const userData = UserData.forLinux();
-
     userData.addCommands(
       "yum update -y",
-      "mkdir -p /home/ec2-user/app",
-      "aws s3 cp s3://" +
-        assetBucket.bucketName +
-        "/ /home/ec2-user/app/ --recursive",
       "python3 -m ensurepip",
-      "python3 -m pip install -r /home/ec2-user/app/requirements.txt",
-      "nohup python3 /home/ec2-user/app/app.py > /var/log/app.log 2>&1 < /dev/null &"
+      "mkdir -p /home/ec2-user/app"
     );
 
     this.instance = new Instance(this, "gummy-promotion-application", {
@@ -70,9 +47,52 @@ export class ApplicationResource extends Construct {
       vpc: props.vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
       securityGroup: props.applicationSecurityGroup,
-      role: role,
       userData: userData,
       userDataCausesReplacement: true,
+      detailedMonitoring: true,
+      init: CloudFormationInit.fromConfig(
+        new InitConfig([
+          InitSource.fromAsset("/home/ec2-user/app", "src/resources/app"),
+          InitFile.fromFileInline(
+            "/etc/config.sh",
+            "src/resources/config/config.sh"
+          ),
+          InitFile.fromFileInline(
+            "/etc/systemd/system/app.service",
+            "src/resources/config/app.service"
+          ),
+          InitCommand.shellCommand("chmod +x /etc/config.sh"),
+          InitCommand.shellCommand("/etc/config.sh"),
+        ])
+      ),
+      ssmSessionPermissions: true,
+      blockDevices: [
+        {
+          deviceName: "/dev/xvda",
+          volume: BlockDeviceVolume.ebs(20, { encrypted: true }),
+        },
+      ],
     });
+    const cfnIns = this.instance.node.defaultChild as CfnInstance;
+    cfnIns.addPropertyOverride("DisableApiTermination", true);
+
+    NagSuppressions.addResourceSuppressions(
+      this.instance,
+      [
+        {
+          id: "AwsSolutions-IAM4",
+          reason: "SSM Managed Instance Core",
+        },
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Allow downloading CDK assets",
+        },
+        {
+          id: "AwsSolutions-EC29",
+          reason: "Remediated through property override",
+        },
+      ],
+      true
+    );
   }
 }

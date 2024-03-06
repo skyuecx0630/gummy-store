@@ -5,6 +5,7 @@ import {
   SubnetType,
   Peer,
 } from "aws-cdk-lib/aws-ec2";
+import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 
 export class VPCResource extends Construct {
@@ -60,5 +61,12 @@ export class VPCResource extends Construct {
       this.nlbSecurityGroup,
       Port.tcp(8080)
     );
+
+    NagSuppressions.addResourceSuppressions(this.nlbSecurityGroup, [
+      {
+        id: "AwsSolutions-EC23",
+        reason: "It's for VPC endpoint service",
+      },
+    ]);
   }
 }

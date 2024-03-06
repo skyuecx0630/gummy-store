@@ -1,0 +1,7 @@
+[Unit]
+Description=gummy-promotion-app
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/ec2-user/app/app.py
