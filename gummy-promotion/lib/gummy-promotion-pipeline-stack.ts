@@ -56,8 +56,8 @@ export class GummyPromotionPipelineStack extends Stack {
         partialBuildSpec: BuildSpec.fromObject({
           reports: {
             "cdk-synth": {
-              files: ["cdk.out/*-NagReport.csv"],
-              "file-format": "csv",
+              files: ["cdk.out/test/*.xml"],
+              "file-format": "JUNITXML",
             },
           },
         }),
