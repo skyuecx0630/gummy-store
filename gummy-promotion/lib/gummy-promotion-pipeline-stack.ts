@@ -20,6 +20,8 @@ class GummyPromotionStage extends Stage {
 }
 
 export class GummyPromotionPipelineStack extends Stack {
+  public pipeline: CodePipeline;
+
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -45,7 +47,7 @@ export class GummyPromotionPipelineStack extends Stack {
       "main"
     );
 
-    const pipeline = new CodePipeline(this, "GummyPromotionPipeline", {
+    this.pipeline = new CodePipeline(this, "GummyPromotionPipeline", {
       synth: new ShellStep("Synth", {
         input: source,
         commands: ["npm install -g aws-cdk && npm install", "cdk synth"],
@@ -63,6 +65,8 @@ export class GummyPromotionPipelineStack extends Stack {
     });
 
     const deploy = new GummyPromotionStage(this, "Deploy");
-    pipeline.addStage(deploy);
+    this.pipeline.addStage(deploy);
+
+    this.pipeline.buildPipeline();
   }
 }

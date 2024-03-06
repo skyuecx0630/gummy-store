@@ -38,4 +38,19 @@ NagSuppressions.addStackSuppressions(stack, [
     reason: "No logging",
   },
 ]);
+NagSuppressions.addResourceSuppressionsByPath(
+  stack,
+  `/${stack.stackName}/${stack.pipeline.node.id}`,
+  [
+    {
+      id: "AwsSolutions-IAM5",
+      reason: "Pipeline execution permissions",
+    },
+    {
+      id: "AwsSolutions-CB4",
+      reason: "Codebuild without encryption",
+    },
+  ],
+  true
+);
 // cdk.Aspects.of(app).add(new NIST80053R5Checks());
