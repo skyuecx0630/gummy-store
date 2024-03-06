@@ -50,7 +50,11 @@ export class GummyPromotionPipelineStack extends Stack {
     this.pipeline = new CodePipeline(this, "GummyPromotionPipeline", {
       synth: new ShellStep("Synth", {
         input: source,
-        commands: ["npm install -g aws-cdk && npm install", "cdk synth"],
+        commands: [
+          "npm install -g aws-cdk && npm install",
+          "npm test",
+          "cdk synth",
+        ],
       }),
       synthCodeBuildDefaults: {
         partialBuildSpec: BuildSpec.fromObject({
