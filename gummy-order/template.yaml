@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  gummy-order
+
+  Sample SAM Template for gummy-order
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  SimpleTable:
+    SSESpecification:
+      SSEEnabled: true
+  Function:
+    Timeout: 5
+
+Resources:
+  MakeOrderFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/make_order
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref GummyOrderTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref GummyOrderTable
+      Events:
+        Order:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: post
+
+  GetOrderFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/get_order
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref GummyOrderTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref GummyOrderTable
+      Events:
+        Order:
+          Type: Api
+          Properties:
+            Path: /orders/{order_id}
+            Method: get
+            RequestParameters:
+              - method.request.path.order_id:
+                  Caching: true
+                  Required: true
+
+  GummyOrderTable:
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: gummy-order
+      PrimaryKey:
+        Name: order_id
+        Type: String
+
+Outputs:
+  OrderApi:
+    Description: "API Gateway endpoint URL for gummy-order"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/orders/"
+  GummyOrderTable:
+    Description: "DynamoDB table for gummy-order"
+    Value: !Ref GummyOrderTable
+  MakeOrderFunction:
+    Description: "ARN of make order function"
+    Value: !GetAtt MakeOrderFunction.Arn
+  GetOrderFunction:
+    Description: "ARN of get order function"
+    Value: !GetAtt GetOrderFunction.Arn
